@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 
-template <typename Type, typename Del>
+template <typename Type, typename Del = std::default_delete<Type>>
 class SmartPtr : private Del {
 public:
 	SmartPtr(Type *ptr, Del &&del = Del()) : Del(std::move(del)), ptr(ptr) {}
@@ -11,7 +11,7 @@ public:
 	const Type *get() const { return ptr; }
 	Type *operator*() { return ptr; }
 	const Type *operator*() const { return ptr; }
-	~SmartPtr() { this->unallocate(ptr); }
+	~SmartPtr() { (*this)(ptr); }
 private:
 	Type *ptr;
 };
@@ -19,9 +19,9 @@ private:
 template <typename Type>
 class Empty {
 public:
-	static void unallocate(Type *ptr) {
-		ptr->~Type();
+	void operator()(Type *ptr) {
 		std::cout << "In unallocate" << std::endl;
+		ptr->~Type();
 	};
 };
 
@@ -37,9 +37,10 @@ private:
 
 int main() {
 	{
-		SmartPtr<Sample, Empty<Sample>> ptr2(new Sample("sample 2"));
+		SmartPtr<Sample> ptr2(new Sample("sample 2"));
 		{
 			SmartPtr<Sample, Empty<Sample>> ptr1(new Sample("sample 1"));
+			std::cout << sizeof(ptr2) << std::endl;
 		}
 		std::cout << sizeof(ptr2) << std::endl;
 	}
