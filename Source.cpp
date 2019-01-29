@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 
 template <typename Type, typename Del>
 class SmartPtr : private Del {
@@ -8,27 +9,40 @@ public:
 	const Del &del() const { return *this; }
 	Type *get() { return ptr; }
 	const Type *get() const { return ptr; }
+	Type *operator*() { return ptr; }
+	const Type *operator*() const { return ptr; }
+	~SmartPtr() { this->unallocate(ptr); }
 private:
 	Type *ptr;
 };
 
+template <typename Type>
 class Empty {
 public:
-	static int factorial(int n);
+	static void unallocate(Type *ptr) {
+		ptr->~Type();
+		std::cout << "In unallocate" << std::endl;
+	};
+};
+
+class Sample {
+public:
+	Sample(std::string &&name) : name(std::move(name)) {}
+	~Sample() {
+		std::cout << "Deleting " << name << '!' << std::endl;
+	}
+private:
+	std::string name;
 };
 
 int main() {
-	SmartPtr<size_t, Empty> ptr(new size_t(0));
-
-	std::cout << sizeof(ptr) << std::endl;
-	std::cout << *ptr.get() << std::endl;
-	std::cout << ptr.del().factorial(7) << std::endl;
+	{
+		SmartPtr<Sample, Empty<Sample>> ptr2(new Sample("sample 2"));
+		{
+			SmartPtr<Sample, Empty<Sample>> ptr1(new Sample("sample 1"));
+		}
+		std::cout << sizeof(ptr2) << std::endl;
+	}
 
 	system("pause");
-}
-
-int Empty::factorial(int n) {
-	if (n == 0)
-		return 1;
-	return n * factorial(n - 1);
 }
