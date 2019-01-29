@@ -1,15 +1,15 @@
 #include <iostream>
 
-template <typename Member, typename Base>
-class MemberBasePair : private Base {
+template <typename Type, typename Del>
+class SmartPtr : private Del {
 public:
-	MemberBasePair(Member member, Base &&base = Base()) : Base(std::move(base)), mem(member) {}
-	Base &base() { return *this; }
-	const Base &base() const { return *this; }
-	Member &member() { return mem; }
-	const Member &member() const { return mem; }
+	SmartPtr(Type *ptr, Del &&del = Del()) : Del(std::move(del)), ptr(ptr) {}
+	Del &del() { return *this; }
+	const Del &del() const { return *this; }
+	Type *get() { return ptr; }
+	const Type *get() const { return ptr; }
 private:
-	Member mem;
+	Type *ptr;
 };
 
 class Empty {
@@ -18,11 +18,11 @@ public:
 };
 
 int main() {
-	MemberBasePair<size_t, Empty> pair(42);
+	SmartPtr<size_t, Empty> ptr(new size_t(0));
 
-	std::cout << sizeof(pair) << std::endl;
-	std::cout << pair.member() << std::endl;
-	std::cout << pair.base().factorial(7) << std::endl;
+	std::cout << sizeof(ptr) << std::endl;
+	std::cout << *ptr.get() << std::endl;
+	std::cout << ptr.del().factorial(7) << std::endl;
 
 	system("pause");
 }
