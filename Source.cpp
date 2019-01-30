@@ -9,7 +9,7 @@ template <typename Type, size_t Size, CustomHeap<Type, Size> &Heap>
 class DeleterTemplate {
 public:
 	void operator()(Type *ptr) {
-		std::cout << "In unallocate" << std::endl;
+		std::cout << "Unallocating " << ptr->name << std::endl;
 		Heap.Free(ptr);
 	};
 };
@@ -36,21 +36,26 @@ private:
 	size_t free = Size;
 };
 
+template <typename Type, size_t Size>
+inline void *operator new(size_t, CustomHeap<Type, Size> &heap) {
+	return heap.Allocate();
+}
+
 class Sample {
 public:
 	Sample(std::string &&name = "") : name(std::move(name)) {}
-private:
 	std::string name;
 };
 
 static CustomHeap<Sample, 100> heap;
+typedef std::unique_ptr<Sample, decltype(heap)::Deleter<heap>> pSample;
 
 int main() {
 	std::cout << "Free space: " << heap.FreeSpace() << std::endl;
 	{
-		std::unique_ptr<Sample, decltype(heap)::Deleter<heap>> ptr2(heap.Allocate());
+		pSample ptr2(new(heap) Sample("Sample 2"));
 		{
-			std::unique_ptr<Sample, decltype(heap)::Deleter<heap>> ptr1(heap.Allocate());
+			pSample ptr1(new(heap) Sample("Sample 1"));
 			std::cout << "Size of sample 1: " << sizeof(ptr2) << std::endl;
 			std::cout << "Free space: " << heap.FreeSpace() << std::endl;
 		}
@@ -67,7 +72,7 @@ template <typename Type, size_t Size> Type *CustomHeap<Type, Size>::Allocate() {
 		return nullptr;
 	free--;
 
-	return new(&heap[findFree()]) Type();
+	return &heap[findFree()];
 }
 template <typename Type, size_t Size> void CustomHeap<Type, Size>::Free(Type *ptr) {
 	size_t index = (ptr - &heap[0]) / sizeof(Type);
