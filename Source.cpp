@@ -2,21 +2,6 @@
 #include <iostream>
 #include <string>
 
-template <typename Type, typename Del = std::default_delete<Type>>
-class SmartPtr : private Del {
-public:
-	SmartPtr(Type *ptr, Del del = Del()) : Del(std::move(del)), ptr(ptr) {}
-	Del &del() { return *this; }
-	const Del &del() const { return *this; }
-	Type *get() { return ptr; }
-	const Type *get() const { return ptr; }
-	Type *operator*() { return ptr; }
-	const Type *operator*() const { return ptr; }
-	~SmartPtr() { (*this)(ptr); }
-private:
-	Type *ptr;
-};
-
 template <typename Type, size_t Size>
 class CustomHeap {
 public:
@@ -60,9 +45,9 @@ public:
 int main() {
 	std::cout << "Free space: " << heap.FreeSpace() << std::endl;
 	{
-		SmartPtr<Sample, Deleter<Sample>> ptr2(heap.Allocate());
+		std::unique_ptr<Sample, Deleter<Sample>> ptr2(heap.Allocate());
 		{
-			SmartPtr<Sample, Deleter<Sample>> ptr1(heap.Allocate());
+			std::unique_ptr<Sample, Deleter<Sample>> ptr1(heap.Allocate());
 			std::cout << "Size of sample 1: " << sizeof(ptr2) << std::endl;
 			std::cout << "Free space: " << heap.FreeSpace() << std::endl;
 		}
