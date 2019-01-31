@@ -23,8 +23,19 @@ private:
 	Class<T> var;
 };
 
-B<A<size_t>> global(42);
+template <auto &> class C;
+template <template<typename> class Middle, typename T, template<typename> class Class, Class<Middle<T>> &ptr>
+class C<ptr> {
+public:
+	void Print(Class<Middle<T>> &obj, T adder) {
+		obj.Print(adder);
+	}
+};
+
+
+B<A<size_t>> global(42);	
 
 int main() {
-	global.Print(7);
+	C<global> printer;
+	printer.Print(global, 7);
 }
