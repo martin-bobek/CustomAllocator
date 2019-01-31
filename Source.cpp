@@ -1,41 +1,33 @@
 #include <iostream>
 
-template <typename T>
-class A {
+template <typename Inner>
+class Middle {
 public:
-	A(T var) : var(var) {}
-	void Print(T adder) {
-		std::cout << var + adder << std::endl;
-	}
+	Middle(Inner var) : var(var) {}
+	void Print(Inner adder) { std::cout << var + adder << std::endl; }
 private:
-	T var;
+	Inner var;
 };
 
-template <typename> class B;
-template <template<typename> class Class, typename T>
-class B<Class<T>> {
+template <typename> class Outer;
+template <template<typename> class T, typename U>
+class Outer<T<U>> {
 public:
-	B(Class<T> var) : var(var) {}
-	void Print(T adder) {
-		var.Print(adder);
-	}
+	Outer(T<U> var) : var(var) {}
+	void Print(U adder) { var.Print(adder); }
 private:
-	Class<T> var;
+	T<U> var;
 };
 
-template <auto &> class C;
-template <template<typename> class Middle, typename T, template<typename> class Class, Class<Middle<T>> &ptr>
-class C<ptr> {
-public:
-	void Print(Class<Middle<T>> &obj, T adder) {
-		obj.Print(adder);
-	}
+template <auto &> struct Reference;
+template <typename V, template<typename> class U, template<typename> class T, T<U<V>> &ref>
+struct Reference<ref> {
+	void operator()(V adder) const { ref.Print(adder); }
 };
 
-
-B<A<size_t>> global(42);	
+static Outer<Middle<size_t>> global(42);
 
 int main() {
-	C<global> printer;
-	printer.Print(global, 7);
+	Reference<global> printer;
+	printer(7);
 }
