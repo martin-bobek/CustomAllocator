@@ -1,25 +1,25 @@
 #include <iostream>
 
-//template <typename T>
+template <typename T>
 class Referenced {
 public:
-	void PrintT() {
-		std::cout << "Hello there" << std::endl;
+	void PrintT(T var) {
+		std::cout << "Hello there: " << var << std::endl;
 	}
 };
 
-template <Referenced &ref>
+template <typename T, Referenced<T> &ref>
 class Reference {
 public:
-	void Trigger() {
-		ref.PrintT();
+	void Trigger(T var) {
+		ref.PrintT(var);
 	}
 };
 
-Referenced target;
+Referenced<size_t> target;
 
 int main() {
-	Reference<target> ref;
-	ref.Trigger();
+	Reference<size_t, target> ref;
+	ref.Trigger(42);
 	system("pause");
 }
