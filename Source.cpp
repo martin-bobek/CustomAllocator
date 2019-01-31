@@ -1,25 +1,11 @@
 #include <array>
 #include <iostream>
+#include <memory>
 #include <string>
-
-template <typename Type, size_t Size>
-class CustomHeap;
-
-template <typename Type, size_t Size, CustomHeap<Type, Size> &Heap>
-class DeleterTemplate {
-public:
-	void operator()(Type *ptr) {
-		std::cout << "Unallocating " << ptr->name << std::endl;
-		Heap.Free(ptr);
-	};
-};
 
 template <typename Type, size_t Size>
 class CustomHeap {
 public:
-	template <CustomHeap<Type, Size> &Heap>
-	using Deleter = DeleterTemplate<Type, Size, Heap>;
-
 	CustomHeap() { allocated.fill(0); }
 	Type *Allocate();
 	void Free(Type *ptr);
@@ -36,6 +22,15 @@ private:
 	size_t free = Size;
 };
 
+template <auto &Heap> struct Deleter;
+template <typename Type, size_t Size, template<typename, size_t> class HeapType, HeapType<Type, Size> &Heap>
+struct Deleter<Heap> {
+	void operator()(Type *ptr) const {
+		std::cout << "Unallocating " << ptr->name << std::endl;
+		Heap.Free(ptr);
+	};
+};
+
 template <typename Type, size_t Size>
 inline void *operator new(size_t, CustomHeap<Type, Size> &heap) {
 	return heap.Allocate();
@@ -48,14 +43,14 @@ public:
 };
 
 static CustomHeap<Sample, 100> heap;
-typedef std::unique_ptr<Sample, decltype(heap)::Deleter<heap>> pSample;
+template <typename Del = std::default_delete<Sample>> using pSample = std::unique_ptr<Sample, Del>;
 
 int main() {
 	std::cout << "Free space: " << heap.FreeSpace() << std::endl;
 	{
-		pSample ptr2(new(heap) Sample("Sample 2"));
+		pSample<Deleter<heap>> ptr2(new(heap) Sample("Sample 2"));
 		{
-			pSample ptr1(new(heap) Sample("Sample 1"));
+			pSample<Deleter<heap>> ptr1(new(heap) Sample("Sample 1"));
 			std::cout << "Size of sample 1: " << sizeof(ptr2) << std::endl;
 			std::cout << "Free space: " << heap.FreeSpace() << std::endl;
 		}
@@ -63,8 +58,6 @@ int main() {
 		std::cout << "Free space: " << heap.FreeSpace() << std::endl;
 	}
 	std::cout << "Free space: " << heap.FreeSpace() << std::endl;
-
-	system("pause");
 }
 
 template <typename Type, size_t Size> Type *CustomHeap<Type, Size>::Allocate() {
