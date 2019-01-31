@@ -1,6 +1,5 @@
 #include <iostream>
 
-//template <typename T>
 class Referenced {
 public:
 	void PrintT() {
@@ -8,18 +7,17 @@ public:
 	}
 };
 
-template <Referenced &ref>
-class Reference {
+template <auto> struct Reference;
+template <typename Class, void (Class::*MF)()> struct Reference<MF> {
 public:
-	void Trigger() {
-		ref.PrintT();
+	void Trigger(Class *instance) {
+		(instance->*MF)();
 	}
 };
 
 Referenced target;
 
 int main() {
-	Reference<target> ref;
-	ref.Trigger();
-	system("pause");
+	Reference<&Referenced::PrintT> ref;
+	ref.Trigger(&target);
 }
