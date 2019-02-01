@@ -22,17 +22,17 @@ private:
 	size_t free = Size;
 };
 
-template <auto &Heap> struct Deleter;
-template <typename Type, size_t Size, template<typename, size_t> class HeapType, HeapType<Type, Size> &Heap>
-struct Deleter<Heap> {
+template <auto &rHeap> struct Deleter;
+template <typename Type, size_t Size, template<typename, size_t> class Heap, Heap<Type, Size> &rHeap>
+struct Deleter<rHeap> {
 	void operator()(Type *ptr) const {
 		std::cout << "Unallocating " << ptr->name << std::endl;
-		Heap.Free(ptr);
+		rHeap.Free(ptr);
 	};
 };
 
-template <typename Type, size_t Size>
-inline void *operator new(size_t, CustomHeap<Type, Size> &heap) {
+template <typename Heap>
+inline void *operator new(size_t, Heap &heap) {
 	return heap.Allocate();
 }
 
