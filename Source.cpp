@@ -2,9 +2,19 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <type_traits>
+
+template <typename Type>
+class Allocator {
+public:
+	using _AllocElementType = Type;
+	virtual Type *Allocate() = 0;
+	virtual void Free(Type *ptr) = 0;
+	virtual ~Allocator() = default;
+};
 
 template <typename Type, size_t Size>
-class CustomHeap {
+class CustomHeap : public Allocator<Type> {
 public:
 	CustomHeap() { allocated.fill(0); }
 	Type *Allocate();
@@ -22,16 +32,15 @@ private:
 	size_t free = Size;
 };
 
-template <auto &rHeap> struct Deleter;
-template <typename Type, size_t Size, template<typename, size_t> class Heap, Heap<Type, Size> &rHeap>
-struct Deleter<rHeap> {
-	void operator()(Type *ptr) const {
-		std::cout << "Unallocating " << ptr->name << std::endl;
-		rHeap.Free(ptr);
-	};
+template <auto &rHeap,
+	std::enable_if_t<std::is_convertible_v<std::remove_reference_t<decltype(rHeap)> *,
+	Allocator<typename std::remove_reference_t<decltype(rHeap)>::_AllocElementType> *>> * = nullptr>
+struct Deleter {
+	using Type = typename std::remove_reference_t<decltype(rHeap)>::_AllocElementType;
+	void operator()(Type *ptr) const { rHeap.Free(ptr); };
 };
 
-template <typename Heap>
+template <typename Heap, std::enable_if_t<std::is_convertible_v<Heap *, Allocator<typename Heap::_AllocElementType> *>> * = nullptr>
 inline void *operator new(size_t, Heap &heap) {
 	return heap.Allocate();
 }
@@ -39,6 +48,8 @@ inline void *operator new(size_t, Heap &heap) {
 class Sample {
 public:
 	Sample(std::string &&name = "") : name(std::move(name)) {}
+	~Sample() { std::cout << "Destructing " << name << std::endl; }
+private:
 	std::string name;
 };
 
@@ -58,6 +69,8 @@ int main() {
 		std::cout << "Free space: " << heap.FreeSpace() << std::endl;
 	}
 	std::cout << "Free space: " << heap.FreeSpace() << std::endl;
+
+	system("pause");
 }
 
 template <typename Type, size_t Size> Type *CustomHeap<Type, Size>::Allocate() {
