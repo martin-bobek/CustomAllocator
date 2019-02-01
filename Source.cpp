@@ -1,18 +1,20 @@
 #include <iostream>
 
+template <typename T>
 class A {
 public:
-	typedef size_t Type;
+	typedef T Type;
 };
 
-class B : public A {
+template <typename T>
+class B : public A<T> {
 public:
-	B(Type var) : var(var) {}
-	Type var;
+	B(typename A<T>::Type var) : var(var) {}
+	typename A<T>::Type var;
 };
 
 int main() {
-	B b(43);
+	B<size_t> b(43);
 	std::cout << b.var << std::endl;
 	system("pause");
 }
