@@ -2,7 +2,13 @@
 #include <memory>
 #include <string>
 
-#include "custom_allocator.h"
+#include "basic_allocator.h"
+
+#define CUSTOM_ALLOC		BasicAlloc
+
+class Sample;
+template <size_t Size> using Heap = CUSTOM_ALLOC<Sample, Size>;
+template <typename Del = std::default_delete<Sample>> using pSample = std::unique_ptr<Sample, Del>;
 
 class Wrapper {
 public:
@@ -30,8 +36,7 @@ private:
 };
 size_t Sample::count = 0;
 
-template <typename Del = std::default_delete<Sample>> using pSample = std::unique_ptr<Sample, Del>;
-static CustomHeap<Sample, 100> heap;
+static Heap<100> heap;
 
 int main() {
 	std::cout << "Free space: " << heap.FreeSpace() << std::endl;

@@ -2,24 +2,15 @@
 #define CUSTOM_ALLOCATOR_H_
 
 #include <array>
-#include <new>
 #include <type_traits>
 
 #include "allocator.h"
+#include "static_vector.h"
 
 template <typename Type, size_t Size>
-class StaticVector {
+class BasicAlloc : public Allocator<Type> {
 public:
-	Type &operator[](size_t index) noexcept { return *std::launder(reinterpret_cast<Type*>(&vector[index])); }
-	const Type &operator[](size_t index) const noexcept { return *std::launder(reinterpret_cast<const Type*>(&vector[index])); }
-private:
-	std::array<std::aligned_storage_t<sizeof(Type), alignof(Type)>, Size> vector;
-};
-
-template <typename Type, size_t Size>
-class CustomHeap : public Allocator<Type> {
-public:
-	CustomHeap() { allocated.fill(0); }
+	BasicAlloc() { allocated.fill(0); }
 	Type *Allocate() noexcept;
 	void Free(Type *ptr) noexcept;
 	size_t FreeSpace() const noexcept { return free; }
@@ -36,19 +27,19 @@ private:
 };
 
 
-template <typename Type, size_t Size> inline Type *CustomHeap<Type, Size>::Allocate() noexcept {
+template <typename Type, size_t Size> inline Type *BasicAlloc<Type, Size>::Allocate() noexcept {
 	if (!free)
 		return nullptr;
 	free--;
 
 	return &heap[findFree()];
 }
-template <typename Type, size_t Size> inline void CustomHeap<Type, Size>::Free(Type *ptr) noexcept {
+template <typename Type, size_t Size> inline void BasicAlloc<Type, Size>::Free(Type *ptr) noexcept {
 	size_t index = (ptr - &heap[0]) / sizeof(Type);
 	allocated[index / blockSize] &= ~(1 << (index % blockSize));
 	free++;
 }
-template <typename Type, size_t Size> inline size_t CustomHeap<Type, Size>::findFree() noexcept {
+template <typename Type, size_t Size> inline size_t BasicAlloc<Type, Size>::findFree() noexcept {
 	size_t block = 0, bit = 0;
 	while (allocated[block] == blockFull)
 		block++;
