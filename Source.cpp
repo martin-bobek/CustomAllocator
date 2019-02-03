@@ -14,6 +14,15 @@ public:
 };
 
 template <typename Type, size_t Size>
+class StaticVector {
+public:
+	Type &operator[](size_t index) { return *std::launder(reinterpret_cast<Type *>(&vector[index])); }
+	const Type &operator[](size_t index) const { return *std::launder(reinterpret_cast<const Type *>(&vector[index])); }
+private:
+	std::array<std::aligned_storage_t<sizeof(Type), alignof(Type)>, Size> vector;
+};
+
+template <typename Type, size_t Size>
 class CustomHeap : public Allocator<Type> {
 public:
 	CustomHeap() { allocated.fill(0); }
@@ -27,7 +36,7 @@ private:
 	static constexpr allocBlock blockFull = std::numeric_limits<allocBlock>::max();
 	static constexpr size_t blockSize = 8 * sizeof(allocBlock);
 
-	std::array<Type, Size> heap;
+	StaticVector<Type, Size> heap;
 	std::array<allocBlock, Size / blockSize + 1> allocated;
 	size_t free = Size;
 };
