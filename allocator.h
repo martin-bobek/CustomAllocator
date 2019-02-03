@@ -13,16 +13,24 @@ public:
 };
 
 template <auto &rHeap,
-	std::enable_if_t<std::is_convertible_v<std::remove_reference_t<decltype(rHeap)> *,
-	Allocator<typename std::remove_reference_t<decltype(rHeap)>::_AllocElementType> *>> * = nullptr>
+	std::enable_if_t<std::is_convertible_v<std::remove_reference_t<decltype(rHeap)>*,
+	Allocator<typename std::remove_reference_t<decltype(rHeap)>::_AllocElementType>*>>* = nullptr>
 struct Deleter {
 	using Type = typename std::remove_reference_t<decltype(rHeap)>::_AllocElementType;
-	void operator()(Type *ptr) const { rHeap.Free(ptr); };
+	void operator()(Type *ptr) const {
+		ptr->~Type();
+		rHeap.Free(ptr);
+	};
 };
 
-template <typename Heap, std::enable_if_t<std::is_convertible_v<Heap *, Allocator<typename Heap::_AllocElementType> *>> * = nullptr>
+template <typename Heap, std::enable_if_t<std::is_convertible_v<Heap*, Allocator<typename Heap::_AllocElementType>*>>* = nullptr>
 inline void *operator new(size_t, Heap &heap) {
 	return heap.Allocate();
+}
+
+template <typename Heap, std::enable_if_t<std::is_convertible_v<Heap*, Allocator<typename Heap::_AllocElementType>*>>* = nullptr>
+inline void operator delete(void *ptr, Heap &heap) {
+	heap.Free(static_cast<typename Heap::_AllocElementType*>(ptr));
 }
 
 #endif
