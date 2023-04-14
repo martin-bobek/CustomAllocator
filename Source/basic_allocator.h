@@ -2,6 +2,7 @@
 #define CUSTOM_ALLOCATOR_H_
 
 #include <array>
+#include <limits>
 #include <type_traits>
 
 #include "allocator.h"
