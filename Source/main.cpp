@@ -44,7 +44,7 @@ int main() {
 		try {
 			pSample<Deleter<heap>> ptr3(new(heap) Sample("Sample 3"));
 		}
-		catch (std::exception e) {
+		catch (const std::exception &) {
 			std::cout << "Caught Exception!" << std::endl;
 		}
 		std::cout << "Free space: " << heap.FreeSpace() << std::endl;
@@ -56,6 +56,4 @@ int main() {
 		std::cout << "Free space: " << heap.FreeSpace() << std::endl;
 	}
 	std::cout << "Free space: " << heap.FreeSpace() << std::endl;
-
-	system("pause");
 }
